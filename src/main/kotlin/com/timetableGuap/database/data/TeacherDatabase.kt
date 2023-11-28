@@ -4,7 +4,7 @@ import org.jetbrains.exposed.sql.ColumnType
 import org.jetbrains.exposed.sql.IntegerColumnType
 import org.jetbrains.exposed.sql.VarCharColumnType
 
-data class Teacher(
+data class TeacherDatabase(
     val id: Int,
     val firstname: String,
     val secondName: String,

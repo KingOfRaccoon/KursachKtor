@@ -5,6 +5,7 @@ import com.timetableGuap.database.data.DatabaseItem
 import com.timetableGuap.database.data.Room
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
+import java.sql.ResultSet
 
 class DatabaseFactory(private val nameDatabase: String = "Kursach") {
     private val userDatabase = "postgres"
@@ -17,17 +18,6 @@ class DatabaseFactory(private val nameDatabase: String = "Kursach") {
             user = userDatabase,
             password = passwordDatabase
         )
-    }
-
-    fun init() {
-        addItemsInDatabase(
-            listOf(
-                Building(2, "Гастелло", "Г"),
-                Building(3, "ФСПО ГУАП", "К")
-            )
-        )
-
-        addItemInDatabase(Room(3, "508"))
     }
 
     fun addItemInDatabase(item: DatabaseItem, isUpdatePolicy: Boolean = true) {
@@ -50,15 +40,29 @@ class DatabaseFactory(private val nameDatabase: String = "Kursach") {
             items.forEach {
                 val query =
                     if (isUpdatePolicy && it.needUpdate())
-                    "INSERT INTO ${it.getDatabaseTableNameWithPostfix()} " +
-                            "ON CONFLICT (${it.getIdName()}) DO update set ${it.getDatabaseUpdatePostfix()};"
-                else "INSERT INTO ${it.getDatabaseTableNameWithPostfix()} " +
+                        "INSERT INTO ${it.getDatabaseTableNameWithPostfix()} " +
+                                "ON CONFLICT (${it.getIdName()}) DO update set ${it.getDatabaseUpdatePostfix()};"
+                    else "INSERT INTO ${it.getDatabaseTableNameWithPostfix()} " +
                             "ON CONFLICT (${it.getIdName()}) DO NOTHING;"
                 println(query)
                 val statement = connection.prepareStatement(query, false)
                 statement.fillParameters(it.getColumnItems())
                 statement.executeUpdate()
             }
+        }
+    }
+
+    fun <T> getAllItemsFromDataBase(nameDatabase: String, convertToObject: (ResultSet) -> T): MutableList<T> {
+        return transaction(database) {
+            val query = "SELECT * FROM $nameDatabase;"
+            println(query)
+            val statement = connection.prepareStatement(query, false)
+            val result = statement.executeQuery()
+            val listObjects = mutableListOf<T>()
+            while (result.next()) {
+                listObjects.add(convertToObject(result))
+            }
+            listObjects
         }
     }
 }

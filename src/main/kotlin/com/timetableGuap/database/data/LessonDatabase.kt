@@ -4,25 +4,30 @@ import org.jetbrains.exposed.sql.ColumnType
 import org.jetbrains.exposed.sql.IntegerColumnType
 import org.jetbrains.exposed.sql.VarCharColumnType
 
-data class Group(
+data class LessonDatabase(
     val id: Int,
-    val groupName: String,
-    val groupId: Int,
+    val number: Int,
+    val dateTimeStart: String,
+    val filterTimetable: String,
+    val subjectId: Int
 ) : DatabaseItem {
     override fun getColumnItems(): List<Pair<ColumnType, Any>> {
         return listOf(
             IntegerColumnType() to id,
-            VarCharColumnType(15) to groupName,
-            IntegerColumnType() to groupId
+            IntegerColumnType() to number,
+            VarCharColumnType(30) to dateTimeStart,
+            VarCharColumnType(30) to filterTimetable,
+            IntegerColumnType() to subjectId
         )
     }
 
     override fun getDatabaseTableNameWithPostfix(): String {
-        return """"Group" VALUES (?, ?, ?)"""
+        return "Lesson VALUES (?, ?, ?, ?, ?)"
     }
 
     override fun getDatabaseUpdatePostfix(): String {
-        return "groupName = EXCLUDED.groupName, groupId = EXCLUDED.groupId"
+        return "number = EXCLUDED.number, dateTimeStart = EXCLUDED.dateTimeStart, " +
+                "filterTimetable = EXCLUDED.filterTimetable, subjectId = EXCLUDED.subjectId"
     }
 
     override fun getIdName(): String {

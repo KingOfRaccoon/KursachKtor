@@ -24,12 +24,12 @@ class ApplicationTest {
     private val database = DatabaseFactory("test")
     private val list: List<DatabaseItem> = listOf(
         Building(0, "test", "t"),
-        Event(1, "test", "test", "2023-11-15T09:30:00Z", "2023-11-15T11:30:00Z"),
-        Group(3, "test", 0),
         Type(2, "fdf", "f", "", ""),
-        Subject(6, "test", 90, 2),
-        Lesson(4, 1, "2023-11-15T09:30:00Z", "groupId: 0", 6),
-        Teacher(5, "te", "tet", "tewt", -1, "", ""),
+        Event(1, 2, "test", "test", "2023-11-15T09:30:00Z", "2023-11-15T11:30:00Z"),
+        GroupDatabase(3, "test", 0),
+        SubjectDatabase(6, "test", 90, 2),
+        LessonDatabase(4, 1, "2023-11-15T09:30:00Z", "groupId: 0", 6),
+        TeacherDatabase(5, "te", "tet", "tewt", -1, "", ""),
         User(8, "ere", "dfs"),
         EventType(1, 2),
         Room(0, "11-11"),
@@ -37,6 +37,7 @@ class ApplicationTest {
         LessonRoom(0, "11-11", 4),
         LessonTeacher(5, 4),
         TypeUser(8, 2),
+        MarkerDatabase("dfkfjdkfjflskflsdtest11dsfddfdffdfd2321")
     )
 
     @Test
