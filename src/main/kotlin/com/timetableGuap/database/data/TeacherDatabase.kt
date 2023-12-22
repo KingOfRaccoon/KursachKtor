@@ -1,9 +1,12 @@
 package com.timetableGuap.database.data
 
+import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.ColumnType
 import org.jetbrains.exposed.sql.IntegerColumnType
 import org.jetbrains.exposed.sql.VarCharColumnType
+import java.sql.ResultSet
 
+@Serializable
 data class TeacherDatabase(
     val id: Int,
     val firstname: String,
@@ -12,7 +15,7 @@ data class TeacherDatabase(
     val tid: Int,
     val image: String,
     val imageThumb: String
-) : DatabaseItem {
+) : DatabaseItem() {
     override fun getColumnItems(): List<Pair<ColumnType, Any>> {
         return listOf(
             IntegerColumnType() to id,
@@ -40,5 +43,20 @@ data class TeacherDatabase(
 
     override fun needUpdate(): Boolean {
         return true
+    }
+
+    companion object {
+        const val nameTable = "Teacher"
+        val convertToTeacherDatabase = { resultSet: ResultSet ->
+            TeacherDatabase(
+                resultSet.getInt(1),
+                resultSet.getString(2),
+                resultSet.getString(3),
+                resultSet.getString(4),
+                resultSet.getInt(5),
+                resultSet.getString(6),
+                resultSet.getString(7),
+            )
+        }
     }
 }

@@ -1,17 +1,6 @@
 package com.timetableGuap.time
 
-import kotlinx.datetime.Clock
-import kotlinx.datetime.DateTimeUnit
-import kotlinx.datetime.DayOfWeek
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.atTime
-import kotlinx.datetime.isoDayNumber
-import kotlinx.datetime.number
-import kotlinx.datetime.plus
-import kotlinx.datetime.toInstant
-import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.*
 
 /** DataTime is class for work with times and dates **/
 open class DataTime(
@@ -88,7 +77,8 @@ open class DataTime(
     /** Return date for timetable **/
     fun forTimeTable() = "${mouth}-${dayOfMonth}-${year}"
 
-    fun getIsoFormat() = "$year-${if (mouth > 9) mouth else "0$mouth"}-${if (dayOfMonth > 9) dayOfMonth else "0$dayOfMonth"}"
+    fun getIsoFormat() =
+        "$year-${if (mouth > 9) mouth else "0$mouth"}-${if (dayOfMonth > 9) dayOfMonth else "0$dayOfMonth"}"
 
     /** Return date with time **/
     fun getDateAndTime() = getDate() + ", " + getTime()
@@ -144,12 +134,15 @@ open class DataTime(
         return "$dayOfMonth.$mouth.$year"
     }
 
-    fun getTimeInMilliSeconds() = LocalDateTime(year, mouth, dayOfMonth, hour, minute).toInstant(TimeZone.currentSystemDefault()).epochSeconds
+    fun getTimeInMilliSeconds() =
+        LocalDateTime(year, mouth, dayOfMonth, hour, minute).toInstant(TimeZone.currentSystemDefault()).epochSeconds
 
-    fun endPair(duration: Double = 1.0) = DataTime(LocalDateTime(year, mouth, dayOfMonth, hour, minute)
-        .toInstant(TimeZone.currentSystemDefault())
-        .plus((90 * duration).toInt(), DateTimeUnit.MINUTE, TimeZone.currentSystemDefault())
-        .toLocalDateTime(TimeZone.currentSystemDefault()))
+    fun endPair(duration: Double = 1.0) = DataTime(
+        LocalDateTime(year, mouth, dayOfMonth, hour, minute)
+            .toInstant(TimeZone.currentSystemDefault())
+            .plus((90 * duration).toInt(), DateTimeUnit.MINUTE, TimeZone.currentSystemDefault())
+            .toLocalDateTime(TimeZone.currentSystemDefault())
+    )
 
     fun getDayAndMouth() = "$dayOfMonth ${getMouthForTime(mouth)}"
 
@@ -220,6 +213,23 @@ open class DataTime(
             12 -> "Декабря"
             else -> ""
         }
+
+        fun getStartDayOfWeek(weekNumber: Int): DataTime {
+            val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+            val startDayOfYear = LocalDateTime(year = today.year, 1, 1, 0, 0)
+            val firstDayOfFirstWeek = when {
+                startDayOfYear.dayOfWeek.isoDayNumber <= 4 -> startDayOfYear.toInstant(TimeZone.currentSystemDefault())
+                    .minus(startDayOfYear.dayOfWeek.isoDayNumber - 1, DateTimeUnit.DAY, TimeZone.currentSystemDefault())
+
+                else -> startDayOfYear.toInstant(TimeZone.currentSystemDefault())
+                    .plus(8 - startDayOfYear.dayOfWeek.isoDayNumber, DateTimeUnit.DAY, TimeZone.currentSystemDefault())
+
+            }
+            return DataTime(
+                firstDayOfFirstWeek.plus(7 * (weekNumber - 1), DateTimeUnit.DAY, TimeZone.currentSystemDefault())
+                    .toLocalDateTime(TimeZone.currentSystemDefault())
+            )
+        }
     }
 }
 
@@ -236,12 +246,5 @@ fun LocalDate.getWeekNumber(): Int {
 }
 
 fun LocalDateTime.getWeekNumber(): Int {
-    val firstDayOfYear = LocalDateTime(year, 1, 1, 0, 0)
-    val daysFromFirstDay = dayOfYear - firstDayOfYear.dayOfYear
-    val firstDayOfYearDayOfWeek = firstDayOfYear.dayOfWeek.isoDayNumber
-    val adjustment = when {
-        firstDayOfYearDayOfWeek <= 4 -> firstDayOfYearDayOfWeek - 1
-        else -> -(8 - firstDayOfYearDayOfWeek)
-    }
-    return (daysFromFirstDay + adjustment) / 7 + 1
+    return LocalDate(year, month, dayOfMonth).getWeekNumber()
 }

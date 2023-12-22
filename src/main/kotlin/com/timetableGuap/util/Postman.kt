@@ -20,7 +20,7 @@ import kotlinx.serialization.json.Json
 
 class Postman {
     private val json = Json { coerceInputValues = true; ignoreUnknownKeys = true }
-    val semaphore = Semaphore(10)
+    val semaphore = Semaphore(20)
     val httpClient = HttpClient(CIO) {
         install(ContentNegotiation) {
             json(json)
@@ -49,7 +49,6 @@ class Postman {
     ): Resource<T> {
         semaphore.withPermit {
             println("get url $baseUrl$route")
-            println(semaphore.availablePermits)
             println("args: $arguments")
             return try {
                 val http = httpClient.get {

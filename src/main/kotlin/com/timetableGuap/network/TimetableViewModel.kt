@@ -4,10 +4,12 @@ import com.timetableGuap.database.DatabaseFactory
 import com.timetableGuap.database.data.*
 import com.timetableGuap.network.data.*
 import com.timetableGuap.network.data.Marker
+import com.timetableGuap.network.data.Room
 import com.timetableGuap.time.DataTime
 import com.timetableGuap.util.Resource
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import java.sql.ResultSet
 import kotlin.random.Random
 
 class TimetableViewModel(private val timetableService: TimetableService, private val databaseFactory: DatabaseFactory) {
@@ -36,6 +38,10 @@ class TimetableViewModel(private val timetableService: TimetableService, private
     private val _markerFlow = MutableStateFlow<Resource<Marker>>(Resource.Loading())
     val markerFlow = _markerFlow.asStateFlow()
 
+    private val _roomsStateFlow =
+        MutableStateFlow<Resource<TimetableResponseData<Room>>>(Resource.Loading())
+    val roomsStateFlow = _roomsStateFlow.asStateFlow()
+
     private val teachersScope = CoroutineScope(Dispatchers.IO)
     private val groupsScope = CoroutineScope(Dispatchers.IO)
     private val timetableScope = CoroutineScope(Dispatchers.IO)
@@ -44,18 +50,47 @@ class TimetableViewModel(private val timetableService: TimetableService, private
         loadMarker()
     }
 
-    fun updateDatabase() {
-        println("updateDatabase")
+    private fun updateDatabase() {
         loadTeachers()
         loadGroups()
         loadTypesLessons()
         loadBuildings()
+        loadRooms()
+    }
+
+    private fun loadRooms() {
+        timetableScope.launch(Dispatchers.IO) {
+            val list = Resource.Loading(TimetableResponseData<Room>())
+            var page = 1
+            var http: Resource<TimetableResponseData<Room>>
+            do {
+                http = timetableService.getListRooms(page)
+                if (http is Resource.Success) {
+                    list.data = list.data?.plus((http.data))
+//                    list.data?.links = http.data.links
+                }
+                page++
+                _roomsStateFlow.update {
+                    if (list.data?.links?.next == true)
+                        list.copy(list.data?.copy(id = Random.nextInt()))
+                    else
+                        Resource.Success(list.data?.copy(id = Random.nextInt()) ?: TimetableResponseData()).also {
+                            databaseFactory.addItemsInDatabase(it.data.results.filter { it.buildingId != 7 }.map {
+                                RoomDatabase(
+                                    it.buildingId,
+                                    it.name
+                                )
+                            })
+                        }
+                }
+            } while (http.data?.links?.next == true)
+        }
     }
 
     private fun loadMarker() {
         timetableScope.launch {
             val oldMarker =
-                databaseFactory.getAllItemsFromDataBase(MarkerDatabase.name, MarkerDatabase.convertToMarkerDatabase)
+                databaseFactory.getAllItemsFromTable(MarkerDatabase.name, MarkerDatabase.convertToMarkerDatabase)
             if (oldMarker.isEmpty()) {
                 _markerFlow.emit(timetableService.getVersion().also {
                     if (it is Resource.Success)
@@ -63,14 +98,43 @@ class TimetableViewModel(private val timetableService: TimetableService, private
                 })
                 updateDatabase()
             } else {
-                if (timetableService.getVersion().data?.version != oldMarker.first().marker){
+                if (timetableService.getVersion().data?.version != oldMarker.first().marker) {
                     _markerFlow.emit(timetableService.getVersion().also {
                         if (it is Resource.Success)
                             databaseFactory.addItemInDatabase(MarkerDatabase(it.data.version), true)
                     })
                     updateDatabase()
+                } else {
+                    loadFromDatabase()
                 }
             }
+        }
+    }
+
+    private fun loadFromDatabase() {
+        timetableScope.launch {
+            databaseFactory.getAllItemsFromTable(RoomDatabase.nameTable, RoomDatabase.convertToRoomDatabase).let {
+                _roomsStateFlow.emit(
+                    Resource.Success(
+                        TimetableResponseData(
+                            count = it.size,
+                            results = it.map { Room(it.buildingId, it.name) })
+                    )
+                )
+            }
+        }
+
+        timetableScope.launch {
+            _buildingsStateFlow.emit(
+                Resource.Success(
+                    TimetableBuildings(
+                        databaseFactory.getAllItemsFromTable(
+                            Building.nameTable,
+                            Building.convertToTimetableBuilding
+                        )
+                    )
+                )
+            )
         }
     }
 
@@ -163,22 +227,33 @@ class TimetableViewModel(private val timetableService: TimetableService, private
         timetableScope.launch {
             _typesLessonsStateFlow.emit(timetableService.getListTypeLessons().also {
                 if (it is Resource.Success)
-                    it.data.types.map {
+                    databaseFactory.addItemsInDatabase(it.data.types.map {
                         Type(
                             it.id,
+                            0,
                             it.name,
                             it.type,
                             "",
                             it.normalizedColor
                         )
-                    }
+                    })
             })
         }
     }
 
     private fun loadBuildings() {
         timetableScope.launch {
-            _buildingsStateFlow.emit(timetableService.getListBuildings())
+            _buildingsStateFlow.emit(timetableService.getListBuildings().also {
+                if (it is Resource.Success)
+                    databaseFactory.addItemsInDatabase(it.data.buildings.map {
+                        Building(
+                            it.id,
+                            it.name,
+                            it.raspId
+                        )
+                    })
+            }
+            )
         }
     }
 
@@ -194,6 +269,24 @@ class TimetableViewModel(private val timetableService: TimetableService, private
             val data = convertWeekToDays(
                 timetableService.getWeekTimetable(year, week, groupId, teacherId, roomId)
             )
+
+            data.forEach { (_, u) ->
+                u.data?.lessons?.forEach {
+                    databaseFactory.addItemsInDatabase(
+                        convertLessonApiToDatabaseList(
+                            it,
+                            databaseFactory.getLessonId(
+                                it.less,
+                                searchName,
+                                generateIdSubject(it.subject.disc, it.subject.typeId),
+                                it.dateTimeSchedule
+                            ),
+                            searchName,
+                            generateIdSubject(it.subject.disc, it.subject.typeId)
+                        ), false
+                    )
+                }
+            }
             _timetableFlow.update {
                 _timetableFlow.value.mergeMaps(
                     searchName, data
@@ -214,6 +307,21 @@ class TimetableViewModel(private val timetableService: TimetableService, private
                 || timetableFlow.value.timetable[searchName]?.get(day) !is Resource.Success
             ) {
                 val data = timetableService.getDayTimetable(day, groupId, teacherId, roomId)
+                data.data?.lessons?.forEach {
+                    databaseFactory.addItemsInDatabase(
+                        convertLessonApiToDatabaseList(
+                            it,
+                            databaseFactory.getLessonId(
+                                it.less,
+                                searchName,
+                                generateIdSubject(it.subject.disc, it.subject.typeId),
+                                it.dateTimeSchedule
+                            ),
+                            searchName,
+                            generateIdSubject(it.subject.disc, it.subject.typeId)
+                        ), false
+                    )
+                }
 
                 _timetableFlow.update {
                     _timetableFlow.value.mergeMaps(
@@ -343,7 +451,61 @@ class TimetableViewModel(private val timetableService: TimetableService, private
         )
     }
 
+    private fun convertLessonApiToDatabaseList(
+        lesson: Lesson,
+        idLesson: Int,
+        filter: String,
+        subjectId: Int
+    ): List<DatabaseItem> {
+        return listOf(
+            SubjectDatabase(
+                subjectId,
+                lesson.subject.disc,
+                (lesson.subject.duration * 90).toInt(),
+                lesson.subject.typeId
+            ),
+            LessonDatabase(
+                idLesson,
+                lesson.less,
+                lesson.dateTimeSchedule,
+                filter,
+                subjectId
+            )
+        ) + lesson.flow.groups.map { LessonGroup(it.id, idLesson) } +
+                lesson.rooms.map { LessonRoom(it.buildingId, it.name, idLesson) }.also { println("rooms: $it") } +
+                lesson.teachers.map { LessonTeacher(it.id, idLesson) }
+    }
+
     private fun generateIdSubject(name: String, typeId: Int) = SubjectForGenerateId(name, typeId).hashCode()
 
-    inner class SubjectForGenerateId(name: String, typeId: Int)
+    data class SubjectForGenerateId(val name: String, val typeId: Int) {
+        override fun hashCode(): Int {
+            var result = name.hashCode()
+            result = 31 * result + typeId
+            return result
+        }
+    }
+
+    fun getLessons(filter: String, dateTimeStart: DataTime, dateTimeEnd: DataTime = dateTimeStart.tomorrow()) =
+        databaseFactory.getLessons(filter, dateTimeStart, dateTimeEnd)
+
+    fun getEvents(userId: Int, dateTimeStart: DataTime, dateTimeEnd: DataTime = dateTimeStart.tomorrow()) =
+        databaseFactory.getEvents(userId, dateTimeStart, dateTimeEnd)
+
+    fun createUser(login: String, password: String, firstName: String, secondName: String, filter: String) =
+        databaseFactory.createUser(login, password, firstName, secondName, filter)
+
+    fun authUser(login: String, password: String) = databaseFactory.authUser(login, password)
+
+    fun createEvent(event: Event, typeIds: List<Int>) = databaseFactory.createEvent(event, typeIds)
+
+    fun createType(type: Type) = databaseFactory.createType(type)
+
+    fun getPagination(
+        nameTimetable: String,
+        convertToDatabaseItem: (ResultSet) -> DatabaseItem,
+        page: Int,
+        pageSize: Int,
+        condition: String = ""
+    ) = databaseFactory.getPaginationData(nameTimetable, convertToDatabaseItem, pageSize, page, condition)
 }

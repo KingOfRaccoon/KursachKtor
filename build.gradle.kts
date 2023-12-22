@@ -28,6 +28,7 @@ repositories {
 }
 
 dependencies {
+    implementation("io.ktor:ktor-server-cors-jvm:2.3.7")
     val ktorVersion = "2.3.2"
     val koinVersion = "3.5.0"
     implementation("io.ktor:ktor-server-core-jvm")
@@ -52,4 +53,5 @@ dependencies {
     implementation("io.insert-koin:koin-core:$koinVersion")
     implementation("io.insert-koin:koin-ktor:$koinVersion")
     implementation("io.insert-koin:koin-test:$koinVersion")
+    implementation("io.ktor:ktor-server-cors:2.3.7")
 }

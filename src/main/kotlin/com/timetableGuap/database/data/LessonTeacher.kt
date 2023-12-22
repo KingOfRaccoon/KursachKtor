@@ -6,7 +6,7 @@ import org.jetbrains.exposed.sql.IntegerColumnType
 data class LessonTeacher(
     val teacherId: Int,
     val lessonId: Int
-): DatabaseItem {
+): DatabaseItem() {
     override fun getColumnItems(): List<Pair<ColumnType, Any>> {
         return listOf(
             IntegerColumnType() to teacherId,

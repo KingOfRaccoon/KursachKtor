@@ -5,7 +5,7 @@ import org.jetbrains.exposed.sql.IntegerColumnType
 import org.jetbrains.exposed.sql.VarCharColumnType
 import java.sql.ResultSet
 
-data class MarkerDatabase(val marker: String, val id: Int = 0): DatabaseItem {
+data class MarkerDatabase(val marker: String, val id: Int = 0): DatabaseItem() {
     override fun getColumnItems(): List<Pair<ColumnType, Any>> {
         return listOf(
             IntegerColumnType() to id,

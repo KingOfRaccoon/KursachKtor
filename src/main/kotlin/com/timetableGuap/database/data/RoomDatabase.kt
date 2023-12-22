@@ -1,10 +1,13 @@
 package com.timetableGuap.database.data
 
+import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.ColumnType
 import org.jetbrains.exposed.sql.IntegerColumnType
 import org.jetbrains.exposed.sql.VarCharColumnType
+import java.sql.ResultSet
 
-data class Room(val buildingId: Int, val name: String) : DatabaseItem {
+@Serializable
+data class RoomDatabase(val buildingId: Int, val name: String) : DatabaseItem() {
     override fun getColumnItems(): List<Pair<ColumnType, Any>> {
         return listOf(
             IntegerColumnType() to buildingId,
@@ -13,7 +16,7 @@ data class Room(val buildingId: Int, val name: String) : DatabaseItem {
     }
 
     override fun getDatabaseTableNameWithPostfix(): String {
-        return "Room VALUES (?, ?)"
+        return "$nameTable VALUES (?, ?)"
     }
 
     override fun getDatabaseUpdatePostfix(): String {
@@ -26,5 +29,12 @@ data class Room(val buildingId: Int, val name: String) : DatabaseItem {
 
     override fun needUpdate(): Boolean {
         return false
+    }
+
+    companion object {
+        const val nameTable = "Room"
+        val convertToRoomDatabase = { result: ResultSet ->
+            RoomDatabase(result.getInt(1), result.getString(2))
+        }
     }
 }

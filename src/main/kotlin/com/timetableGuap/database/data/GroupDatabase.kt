@@ -1,14 +1,17 @@
 package com.timetableGuap.database.data
 
+import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.ColumnType
 import org.jetbrains.exposed.sql.IntegerColumnType
 import org.jetbrains.exposed.sql.VarCharColumnType
+import java.sql.ResultSet
 
-data class GroupDatabase(
+@Serializable
+class GroupDatabase(
     val id: Int,
     val groupName: String,
     val groupId: Int,
-) : DatabaseItem {
+) : DatabaseItem() {
     override fun getColumnItems(): List<Pair<ColumnType, Any>> {
         return listOf(
             IntegerColumnType() to id,
@@ -18,7 +21,7 @@ data class GroupDatabase(
     }
 
     override fun getDatabaseTableNameWithPostfix(): String {
-        return """"Group" VALUES (?, ?, ?)"""
+        return """$nameTable VALUES (?, ?, ?)"""
     }
 
     override fun getDatabaseUpdatePostfix(): String {
@@ -31,5 +34,16 @@ data class GroupDatabase(
 
     override fun needUpdate(): Boolean {
         return true
+    }
+
+    companion object {
+        const val nameTable = """"Group""""
+        val convertToGroupDatabase = { result: ResultSet ->
+            GroupDatabase(
+                result.getInt(1),
+                result.getString(2),
+                result.getInt(3)
+            )
+        }
     }
 }

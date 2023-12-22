@@ -1,16 +1,19 @@
 package com.timetableGuap.database.data
 
+import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.ColumnType
 import org.jetbrains.exposed.sql.IntegerColumnType
 import org.jetbrains.exposed.sql.VarCharColumnType
+import java.sql.ResultSet
 
+@Serializable
 data class LessonDatabase(
     val id: Int,
     val number: Int,
     val dateTimeStart: String,
     val filterTimetable: String,
     val subjectId: Int
-) : DatabaseItem {
+) : DatabaseItem() {
     override fun getColumnItems(): List<Pair<ColumnType, Any>> {
         return listOf(
             IntegerColumnType() to id,
@@ -22,7 +25,7 @@ data class LessonDatabase(
     }
 
     override fun getDatabaseTableNameWithPostfix(): String {
-        return "Lesson VALUES (?, ?, ?, ?, ?)"
+        return "$nameTable VALUES (?, ?, ?, ?, ?)"
     }
 
     override fun getDatabaseUpdatePostfix(): String {
@@ -36,5 +39,9 @@ data class LessonDatabase(
 
     override fun needUpdate(): Boolean {
         return true
+    }
+
+    companion object {
+        const val nameTable = "Lesson"
     }
 }

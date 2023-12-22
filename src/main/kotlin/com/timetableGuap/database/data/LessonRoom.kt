@@ -8,7 +8,7 @@ data class LessonRoom(
     val buildingId: Int,
     val name: String,
     val lessonId: Int
-): DatabaseItem {
+): DatabaseItem() {
     override fun getColumnItems(): List<Pair<ColumnType, Any>> {
         return listOf(
             IntegerColumnType() to buildingId,

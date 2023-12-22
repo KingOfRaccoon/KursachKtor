@@ -15,5 +15,4 @@ data class Lesson(
     val groups: List<TimetableGroup> = listOf(),
     val currentTeachers: List<TimetableTeacher> = listOf(),
     val less: Int = 0
-//    val building: TimetableBuilding = TimetableBuilding()
 ): PagingItem

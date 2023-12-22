@@ -21,7 +21,7 @@ data class Timetable(
                             this.data.lessons = (this.data.lessons + bidData.data.lessons)
                                 .distinctBy { it.dateTimeSchedule }
                                 .toMutableList()
-                        }.also { println("update data: ${it.data.lessons.size}") }
+                        }
                     } else if (bidData is Resource.Success && miniData is Resource.Error) {
                         bidData
                     } else if (bidData is Resource.Error && miniData is Resource.Success) {

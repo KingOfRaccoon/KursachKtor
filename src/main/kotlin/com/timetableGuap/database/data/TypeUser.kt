@@ -6,7 +6,7 @@ import org.jetbrains.exposed.sql.IntegerColumnType
 data class TypeUser(
     val ownerId: Int,
     val typeId: Int
-) : DatabaseItem {
+) : DatabaseItem() {
     override fun getColumnItems(): List<Pair<ColumnType, Any>> {
         return listOf(
             IntegerColumnType() to ownerId,

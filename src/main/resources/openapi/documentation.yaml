@@ -1,23 +1,303 @@
 openapi: "3.0.3"
 info:
-  title: "Application API"
-  description: "Application API"
+  title: "Kursach API"
+  description: "Kursach API"
   version: "1.0.0"
 servers:
-  - url: "http://0.0.0.0:8080"
+- url: "https://Kursach"
 paths:
-  /:
+  /auth:
+    post:
+      description: ""
+      responses:
+        "422":
+          description: "Unprocessable Entity"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ResponseError"
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/User"
+        "409":
+          description: "Conflict"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ResponseError"
+  /createEvent:
     get:
-      description: "Hello World!"
+      description: ""
+      responses:
+        "422":
+          description: "Unprocessable Entity"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ResponseError"
+              examples:
+                Example#1:
+                  description: ""
+                  value:
+                    error: "TypeId number is not correct"
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ResponseSusses"
+        "409":
+          description: "Conflict"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ResponseError"
+  /createType:
+    get:
+      description: ""
+      responses:
+        "422":
+          description: "Unprocessable Entity"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ResponseError"
+              examples:
+                Example#1:
+                  description: ""
+                  value:
+                    error: "OwnerId number is not correct"
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ResponseSusses"
+        "409":
+          description: "Conflict"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ResponseError"
+  /createUser:
+    post:
+      description: ""
+      responses:
+        "422":
+          description: "Unprocessable Entity"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ResponseError"
+        "201":
+          description: "Created"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ResponseSusses"
+        "409":
+          description: "Conflict"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ResponseError"
+  /dayTimetable/${..}:
+    post:
+      description: ""
+      responses:
+        "422":
+          description: "Unprocessable Entity"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ResponseError"
+              examples:
+                Example#1:
+                  description: ""
+                  value:
+                    error: "date is not correct"
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/EventLessonResponse"
+  /groups:
+    get:
+      description: ""
+      responses:
+        "422":
+          description: "Unprocessable Entity"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ResponseError"
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PaginationData"
+  /weekTimetable/${..}/${..}:
+    post:
+      description: ""
+      responses:
+        "422":
+          description: "Unprocessable Entity"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ResponseError"
+              examples:
+                Example#1:
+                  description: ""
+                  value:
+                    error: "year number is not correct"
+                Example#2:
+                  description: ""
+                  value:
+                    error: "week number is not correct"
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/EventLessonResponse"
+  /json/kotlinx-serialization:
+    get:
+      description: ""
       responses:
         "200":
           description: "OK"
           content:
-            text/plain:
+            '*/*':
               schema:
-                type: "string"
-              examples:
-                Example#1:
-                  value: "Hello World!"
+                $ref: "#/components/schemas/Map_String"
 components:
   schemas:
+    ResponseError:
+      type: "object"
+      properties:
+        error:
+          type: "string"
+    User:
+      type: "object"
+      properties:
+        id:
+          type: "integer"
+          format: "int32"
+        firstName:
+          type: "string"
+        secondName:
+          type: "string"
+    ResponseSusses:
+      type: "object"
+      properties:
+        detail:
+          type: "string"
+    RoomDatabase:
+      type: "object"
+      properties:
+        buildingId:
+          type: "integer"
+          format: "int32"
+        name:
+          type: "string"
+    LessonResponse:
+      type: "object"
+      properties:
+        id:
+          type: "integer"
+          format: "int32"
+        number:
+          type: "integer"
+          format: "int32"
+        dataTimeStart:
+          type: "string"
+        filter:
+          type: "string"
+        subjectId:
+          type: "integer"
+          format: "int32"
+        nameSubject:
+          type: "string"
+        duration:
+          type: "integer"
+          format: "int32"
+        typeId:
+          type: "integer"
+          format: "int32"
+        teachersIds:
+          type: "array"
+          items:
+            type: "integer"
+            format: "int32"
+        groupsIds:
+          type: "array"
+          items:
+            type: "integer"
+            format: "int32"
+        rooms:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/RoomDatabase"
+    EventResponse:
+      type: "object"
+      properties:
+        id:
+          type: "integer"
+          format: "int32"
+        name:
+          type: "string"
+        place:
+          type: "string"
+        dateTimeStart:
+          type: "string"
+        dateTimeEnd:
+          type: "string"
+        typeIds:
+          type: "array"
+          items:
+            type: "integer"
+            format: "int32"
+    EventLessonResponse:
+      type: "object"
+      properties:
+        lessons:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/LessonResponse"
+        events:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/EventResponse"
+    Links:
+      type: "object"
+      properties:
+        previous:
+          type: "boolean"
+        next:
+          type: "boolean"
+    DatabaseItem:
+      type: "object"
+      properties: {}
+    PaginationData:
+      type: "object"
+      properties:
+        links:
+          $ref: "#/components/schemas/Links"
+        count:
+          type: "integer"
+          format: "int32"
+        results:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/DatabaseItem"
+    Map:
+      type: "object"
+      properties: {}
+    Map_String:
+      type: "string"

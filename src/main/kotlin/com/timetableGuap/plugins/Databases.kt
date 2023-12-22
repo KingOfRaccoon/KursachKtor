@@ -7,6 +7,7 @@ import org.koin.ktor.ext.inject
 
 fun Application.configureDatabases() {
     val viewModel: TimetableViewModel by inject()
+    viewModel
     routing {
 
     }
